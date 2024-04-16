@@ -12,7 +12,7 @@ async def register_new_user(reader, writer, nick_name):
     writer.write(f'\n{nick_name}\n'.encode())
     await writer.drain()
     messages = []
-    for _ in range(4):
+    for _ in range(3):
         data = await reader.readline()
         logger.debug(data)
         messages.append(data.decode())
@@ -29,7 +29,7 @@ async def authorized_user(reader, writer, token):
         data = await reader.readline()
         logger.debug(data)
         messages.append(data.decode())
-    return messages[1] != 'null\n'
+    return bool(json.loads(messages[1]))
 
 
 async def add_message_to_chat(host, port, message, nick_name=None, token=None):
@@ -37,7 +37,10 @@ async def add_message_to_chat(host, port, message, nick_name=None, token=None):
     try:
         if token:
             is_autorizated = await authorized_user(reader, writer, token)
-            if not is_autorizated:
+            if is_autorizated:
+                writer.write(f'{message}\n\n'.encode())
+                await writer.drain()
+            else:
                 print('Вы ввели неправильный токен, попробуйте еще раз или зарегестрируйтесь заново')
                 print('Для новой регистрации токен должен быть пустым')
         else:
@@ -45,8 +48,8 @@ async def add_message_to_chat(host, port, message, nick_name=None, token=None):
             print('Ваш ник в чате: ', nickname)
             print('Ваш токен для следующего захода в чат под этим ником: ', token)
 
-        writer.write(f'{message}\n\n'.encode())
-        await writer.drain()
+            writer.write(f'{message}\n\n'.encode())
+            await writer.drain()
 
     finally:
         writer.close()
