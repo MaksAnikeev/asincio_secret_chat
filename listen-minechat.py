@@ -1,13 +1,15 @@
-import asyncio
-import aiofiles
-import datetime
 import argparse
+import asyncio
+import datetime
+
+import aiofiles
 from environs import Env
 
 
 async def action_with_file(name, mode, text):
     async with aiofiles.open(name, mode=mode) as file:
         await file.write(text)
+
 
 async def get_chat_stream(host, port, history_file):
     reader, writer = await asyncio.open_connection(host, port)
@@ -52,7 +54,8 @@ if __name__ == "__main__":
                         default=5000)
     parser.add_argument('--history_file',
                         type=str,
-                        help='путь и название файла для сохранения истории сообщений из чата',
+                        help='путь и название файла для'
+                             ' сохранения истории сообщений из чата',
                         default="chat.txt")
     args = parser.parse_args()
 
