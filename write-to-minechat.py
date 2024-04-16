@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-async def register_new_user(reader, writer, nick_name):
+async def register(reader, writer, nick_name):
     writer.write(f'\n{nick_name}\n'.encode())
     await writer.drain()
     messages = []
@@ -22,7 +22,7 @@ async def register_new_user(reader, writer, nick_name):
     return nickname, token
 
 
-async def authorized_user(reader, writer, token):
+async def authorise(reader, writer, token):
     writer.write(f'{token}\n'.encode())
     messages = []
     for _ in range(2):
@@ -32,24 +32,28 @@ async def authorized_user(reader, writer, token):
     return bool(json.loads(messages[1]))
 
 
+async def submit_message(writer, message):
+    writer.write(f'{message}\n\n'.encode())
+    await writer.drain()
+
+
 async def add_message_to_chat(host, port, message, nick_name=None, token=None):
     reader, writer = await asyncio.open_connection(host, port)
     try:
         if token:
-            is_autorizated = await authorized_user(reader, writer, token)
+            is_autorizated = await authorise(reader, writer, token)
             if is_autorizated:
-                writer.write(f'{message}\n\n'.encode())
-                await writer.drain()
+                await submit_message(writer, message)
             else:
                 print('Вы ввели неправильный токен, попробуйте еще раз или зарегестрируйтесь заново')
                 print('Для новой регистрации токен должен быть пустым')
         else:
-            nickname, token = await register_new_user(reader, writer, nick_name)
+            nickname, token = await register(reader, writer, nick_name)
             print('Ваш ник в чате: ', nickname)
             print('Ваш токен для следующего захода в чат под этим ником: ', token)
-
-            writer.write(f'{message}\n\n'.encode())
-            await writer.drain()
+            print("Запишите ваш token в .env TOKEN='cf3392dc-fba1-11ee-aae7-0242ac110003', \n"
+                  " или используйте его при каждом следующем запуске скрипта \n"
+                  "--token cf3392dc-fba1-11ee-aae7-0242ac110003")
 
     finally:
         writer.close()
@@ -84,15 +88,17 @@ if __name__ == "__main__":
     host = env('HOST', args.host)
     port_writer = env('PORT_WRITER', args.port_writer)
     token = env('TOKEN', args.token)
+    message = args.message.replace('\\n', '')
 
     if not token:
         nick_name = input('Введите ваше имя для новой регистрации: ')
+        nick_name = nick_name.replace('\\n', '')
         asyncio.run(add_message_to_chat(host=host,
                                         port=port_writer,
-                                        message=args.message,
+                                        message=message,
                                         nick_name=nick_name))
     else:
         asyncio.run(add_message_to_chat(host=host,
                                         port=port_writer,
-                                        message=args.message,
+                                        message=message,
                                         token=token))
