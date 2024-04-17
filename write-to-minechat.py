@@ -1,12 +1,14 @@
 import argparse
 import asyncio
 import json
+from pathvalidate import replace_symbol
 
 from environs import Env
 import logging
 
 
 logger = logging.getLogger(__name__)
+
 
 async def register(reader, writer, nick_name):
     writer.write(f'\n{nick_name}\n'.encode())
@@ -51,9 +53,9 @@ async def add_message_to_chat(host, port, message, nick_name=None, token=None):
             nickname, token = await register(reader, writer, nick_name)
             print('Ваш ник в чате: ', nickname)
             print('Ваш токен для следующего захода в чат под этим ником: ', token)
-            print("Запишите ваш token в .env TOKEN='cf3392dc-fba1-11ee-aae7-0242ac110003', \n"
+            print(f"Запишите ваш token в .env TOKEN='{token}', \n"
                   " или используйте его при каждом следующем запуске скрипта \n"
-                  "--token cf3392dc-fba1-11ee-aae7-0242ac110003")
+                  f"--token {token}")
 
     finally:
         writer.close()
@@ -92,7 +94,7 @@ if __name__ == "__main__":
 
     if not token:
         nick_name = input('Введите ваше имя для новой регистрации: ')
-        nick_name = nick_name.replace('\\n', '')
+        nick_name = replace_symbol(nick_name)
         asyncio.run(add_message_to_chat(host=host,
                                         port=port_writer,
                                         message=message,
