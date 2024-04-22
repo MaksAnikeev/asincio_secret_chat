@@ -63,6 +63,9 @@ async def add_message_to_chat(host, port, message, nick_name=None, token=None):
 
 
 if __name__ == "__main__":
+    env = Env()
+    env.read_env()
+
     logging.basicConfig(
         format="%(levelname)s:sender: %(message)s",
         level=logging.DEBUG
@@ -72,35 +75,31 @@ if __name__ == "__main__":
     parser.add_argument('--host',
                         type=str,
                         help='адрес сайта',
-                        default='minechat.dvmn.org')
+                        default=env('HOST', 'minechat.dvmn.org'))
     parser.add_argument('--port_writer',
                         type=int,
                         help='порт',
-                        default=5050)
+                        default=env('PORT_WRITER', 5050))
     parser.add_argument('message',
                         type=str,
                         help='сообщение для отправки в чат')
     parser.add_argument('--token',
                         type=str,
-                        help='ваш токен от предыдущей регистрации')
+                        help='ваш токен от предыдущей регистрации',
+                        default=env('TOKEN', None))
     args = parser.parse_args()
 
-    env = Env()
-    env.read_env()
-    host = env('HOST', args.host)
-    port_writer = env('PORT_WRITER', args.port_writer)
-    token = env('TOKEN', args.token)
     message = args.message.replace('\\n', '')
 
-    if not token:
+    if not args.token:
         nick_name = input('Введите ваше имя для новой регистрации: ')
         nick_name = replace_symbol(nick_name)
-        asyncio.run(add_message_to_chat(host=host,
-                                        port=port_writer,
+        asyncio.run(add_message_to_chat(host=args.host,
+                                        port=args.port_writer,
                                         message=message,
                                         nick_name=nick_name))
     else:
-        asyncio.run(add_message_to_chat(host=host,
-                                        port=port_writer,
+        asyncio.run(add_message_to_chat(host=args.host,
+                                        port=args.port_writer,
                                         message=message,
-                                        token=token))
+                                        token=args.token))
